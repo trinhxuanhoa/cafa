@@ -85,9 +85,9 @@ def main():
     # =============================
     # 4. Load test embeddings
     # =============================
-    # Lưu ý: Đường dẫn này bạn tự sửa lại cho đúng với local
+  
     emb_raw = torch.load(
-        "test_embeddings_t33.pt", # Đã bỏ đường dẫn kaggle dài dòng
+        "test_embeddings_t33.pt", 
         map_location=device,
         weights_only=False
     )
@@ -107,7 +107,7 @@ def main():
         for i in range(0, len(test_features), batch_size):
             batch = test_features[i:i+batch_size]
             batch_ids = test_ids[i:i+batch_size]
-            # Chú ý: model(batch) trả về logits, cần sigmoid để ra xác suất
+          
             preds = torch.sigmoid(model(batch)).cpu().numpy()
             
             for acc, p in zip(batch_ids, preds):

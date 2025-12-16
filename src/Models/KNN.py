@@ -14,14 +14,14 @@ def main():
     # 1. Load train dataset
     # =============================
     data = torch.load("train_dataset.pt", weights_only=False)
-    X_train = data["X"]          # (N_train, 1280) tensor
-    Y_train = data["Y"]          # (N_train, num_labels) multi-hot
+    X_train = data["X"]        
+    Y_train = data["Y"]         
     term2idx = data["term2idx"]
     idx2term = {v: k for k, v in term2idx.items()}
     num_labels = len(term2idx)
     print("Train shape:", X_train.shape, Y_train.shape)
 
-    # Đưa lên device + chuẩn hóa L2 để dùng cosine
+  
     X_train = X_train.to(device).float()
     Y_train = Y_train.to(device).float()
     X_train = X_train / X_train.norm(dim=1, keepdim=True).clamp(min=1e-8)
@@ -44,9 +44,9 @@ def main():
     # =============================
     print("Start kNN predicting...")
     rows = []
-    batch_size = 256          # có thể chỉnh
-    k = 20                    # số hàng xóm
-    threshold = 0.05          # ngưỡng ghi ra file
+    batch_size = 256         
+    k = 20                   
+    threshold = 0.05          
 
     with torch.no_grad():
         for i in range(0, X_test.size(0), batch_size):

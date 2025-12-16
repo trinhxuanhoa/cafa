@@ -24,21 +24,17 @@ def get_model(input_dim, num_labels):
     return model
 
 def main():
-    # 1. Setup môi trường
-    # --------------------------------------
-    # Cho phép load numpy object trong file .pt (fix lỗi phiên bản pytorch mới)
+  
     torch.serialization.add_safe_globals([_reconstruct])
     
     device = get_device()
     print("Device:", device)
 
     # ==========================================
-    # PHẦN 1: TRAINING (Mô hình 1)
+    # PHẦN 1: TRAINING
     # ==========================================
     print("\n=== START TRAINING ===")
-    
-    # Load train dataset
-    # Lưu ý: File train_dataset.pt cần nằm cùng thư mục hoặc bạn sửa path
+       
     data = torch.load("train_dataset.pt", weights_only=False)
     X = data["X"]
     Y = data["Y"]
@@ -79,22 +75,17 @@ def main():
     print("Saved model.pt")
 
     # ==========================================
-    # PHẦN 2: PREDICTION (Chạy mô hình 1)
+    # PHẦN 2: PREDICTION 
     # ==========================================
-    print("\n=== START PREDICTION ===")
     
     # Chuyển sang chế độ đánh giá
     model.eval()
     
-    # Load test embeddings
-    # Lưu ý: Sửa đường dẫn này nếu chạy trên local
-    test_path = "/kaggle/input/version2/cafa_project/data/embeddings/test_embeddings_t33.pt"
-    # Nếu chạy local mà không có đường dẫn trên, hãy đổi lại, ví dụ: "test_embeddings_t33.pt"
-    
+   
     try:
         emb_raw = torch.load(test_path, map_location=device, weights_only=False)
     except FileNotFoundError:
-        print(f"Lỗi: Không tìm thấy file tại {test_path}. Vui lòng kiểm tra lại đường dẫn.")
+        print(f"Lỗi: Không tìm thấy file tại {test_path}")
         return
 
     ids = emb_raw["ids"]            # list length N
