@@ -5,17 +5,12 @@ import pandas as pd
 import numpy as np
 from numpy.core.multiarray import _reconstruct
 
-# ==========================================
-# Cấu hình chung
-# ==========================================
+#chỉnh device
 def get_device():
     return "cuda" if torch.cuda.is_available() else "cpu"
 
 def get_model(input_dim, num_labels):
-    """
-    Định nghĩa kiến trúc model ở một chỗ duy nhất 
-    để đảm bảo đồng bộ giữa lúc train và test.
-    """
+    #định nghĩa model
     model = nn.Sequential(
         nn.Linear(input_dim, 2048),
         nn.ReLU(),
@@ -30,9 +25,7 @@ def main():
     device = get_device()
     print("Device:", device)
 
-    # ==========================================
-    # PHẦN 1: TRAINING
-    # ==========================================
+    #train
     print("\n=== START TRAINING ===")
        
     data = torch.load("train_dataset.pt", weights_only=False)
@@ -45,14 +38,13 @@ def main():
     train_ds = TensorDataset(X, Y)
     train_dl = DataLoader(train_ds, batch_size=256, shuffle=True)
 
-    # Khởi tạo model
     model = get_model(1280, num_labels).to(device)
 
     opt = torch.optim.Adam(model.parameters(), lr=1e-3)
     loss_fn = nn.BCEWithLogitsLoss()
     epochs = 10
 
-    # Training loop
+    #loop
     model.train()
     for epoch in range(epochs):
         total_loss = 0
@@ -70,31 +62,25 @@ def main():
 
         print(f"Epoch {epoch+1}/{epochs}, Loss: {total_loss/len(train_dl):.4f}")
 
-    # Lưu model đã train
     torch.save({"model": model.state_dict(), "term2idx": term2idx}, "model.pt")
     print("Saved model.pt")
-
-    # ==========================================
-    # PHẦN 2: PREDICTION 
-    # ==========================================
-    
-    # Chuyển sang chế độ đánh giá
+ 
+    #đánh giá
     model.eval()
     
-   
     try:
         emb_raw = torch.load(test_path, map_location=device, weights_only=False)
     except FileNotFoundError:
         print(f"Lỗi: Không tìm thấy file tại {test_path}")
         return
 
-    ids = emb_raw["ids"]            # list length N
-    features = emb_raw["features"]  # numpy array (N, 1280)
+    ids = emb_raw["ids"]           
+    features = emb_raw["features"]  
 
     print("IDs count:", len(ids))
     print("Features shape:", features.shape)
 
-    # Convert numpy -> Tensor
+    # chuyển numpy thành tensor
     features_tensor = torch.tensor(features, dtype=torch.float32).to(device)
 
     rows = []
@@ -103,16 +89,16 @@ def main():
 
     print("Start batch prediction...")
     
-    # Batch prediction loop
+    # bath-pre loop
     with torch.no_grad():
         for i in range(0, len(features_tensor), batch_size):
-            batch = features_tensor[i:i+batch_size]      # (B, 1280)
-            batch_ids = ids[i:i+batch_size]              # list length B
+            batch = features_tensor[i:i+batch_size]     
+            batch_ids = ids[i:i+batch_size]            
 
-            # Dự đoán
-            preds = torch.sigmoid(model(batch)).cpu().numpy()   # (B, num_labels)
+            # dự đoán
+            preds = torch.sigmoid(model(batch)).cpu().numpy() 
 
-            # Lọc kết quả theo threshold
+            # lọc theo threshold
             for acc, p in zip(batch_ids, preds):
                 hit = np.where(p > threshold)[0]
                 for idx in hit:
@@ -120,7 +106,7 @@ def main():
 
     print("Prediction done. Writing output...")
 
-    # Save submission
+    # lưu sub
     df = pd.DataFrame(rows, columns=["EntryID", "term", "score"])
     df.to_csv("submission.tsv", sep="\t", index=False)
     print("Saved submission.tsv")
