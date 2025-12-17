@@ -4,15 +4,11 @@ import pandas as pd
 import numpy as np
 
 def main():
-    # =============================
-    # Setup Device
-    # =============================
+    # chỉnh device
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print("Device:", device)
 
-    # =============================
-    # 1. Load train dataset
-    # =============================
+ `  # load train dataset
     data = torch.load("train_dataset.pt", weights_only=False)
     X_train = data["X"]        
     Y_train = data["Y"]         
@@ -26,9 +22,7 @@ def main():
     Y_train = Y_train.to(device).float()
     X_train = X_train / X_train.norm(dim=1, keepdim=True).clamp(min=1e-8)
 
-    # =============================
-    # 2. Load test embeddings
-    # =============================
+    # load test embedding
     emb_raw = torch.load(
         "test_embeddings_t33.pt",
         map_location=device,
@@ -39,9 +33,7 @@ def main():
     X_test = X_test / X_test.norm(dim=1, keepdim=True).clamp(min=1e-8)
     print("Test shape:", X_test.shape)
 
-    # =============================
-    # 3. kNN prediction
-    # =============================
+    # bắt đầu kNN
     print("Start kNN predicting...")
     rows = []
     batch_size = 256         
@@ -80,13 +72,11 @@ def main():
                 hit = np.where(p > threshold)[0]
                 for t_idx in hit:
                     rows.append([acc, idx2term[t_idx], float(p[t_idx])])
-
-    # =============================
-    # 4. Save submission
-    # =============================
+    # lưu submission và xuất file
     df = pd.DataFrame(rows, columns=["EntryID", "term", "score"])
     df.to_csv("submission_knn.tsv", sep="\t", index=False)
     print("Saved submission_knn.tsv")
 
 if __name__ == "__main__":
     main()
+
