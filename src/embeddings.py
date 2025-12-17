@@ -11,7 +11,6 @@ SAVE_PATH = "data/embeddings/train_embeddings_t33.pt"
 BATCH_SIZE = 16 
 
 MAX_LEN = 1024 
-# ---------------------------------------------
 
 def get_device():
     return torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -32,16 +31,16 @@ def main():
     model = model.to(device)
     model.eval()
 
-    # Xử lý đa GPU 
+    # xử lý đa GPU 
     if torch.cuda.device_count() > 1:
         print(f"Phát hiện {torch.cuda.device_count()} GPUs. Đang kích hoạt chạy song song.")
         model = torch.nn.DataParallel(model)
 
-    # Đọc dữ liệu
+    #đọc dữ liệu
     print("📖 Đang đọc file FASTA...")
     sequences = []
     ids = []
-    # Lưu ý: Nếu RAM server yếu (<16GB), đoạn này có thể cần tối ưu đọc từng dòng
+    # ram yếu thì phải đọc từng dòng
     for record in SeqIO.parse(FASTA_FILE, "fasta"):
         ids.append(record.id)
         sequences.append(str(record.seq))
@@ -63,17 +62,14 @@ def main():
                 max_length=MAX_LEN
             ).to(device)
 
-            # Lấy output từ model
             outputs = model(**inputs)
             
-            # Lấy embedding (Mean Pooling)
             token_embeddings = outputs.last_hidden_state
             attention_mask = inputs['attention_mask']
             
-            # Mở rộng mask để tính toán đúng kích thước
+            # mở rộng mask
             input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
             
-            # Tính tổng và chia trung bình
             sum_embeddings = torch.sum(token_embeddings * input_mask_expanded, 1)
             sum_mask = torch.clamp(input_mask_expanded.sum(1), min=1e-9)
             
