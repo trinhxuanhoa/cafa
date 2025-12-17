@@ -138,9 +138,7 @@ def build_sequence_feature_matrix(entry_ids, seq_dict, cfg, kmer2idx):
         X_list.append(sequence_to_features(seq_dict.get(pid, ""), cfg, kmer2idx))
     return np.stack(X_list, axis=0) [cite: 20]
 
-# =========================
-# ==== TAXON FEATURES =====
-# =========================
+# TAXON FEATURES
 def load_train_taxonomy(path):
     df = pd.read_csv(path, sep="\t", header=None, names=["EntryID", "TaxonID"])
     return dict(zip(df["EntryID"].astype(str), df["TaxonID"].astype(str)))
@@ -163,10 +161,8 @@ def build_taxon_feature_matrix(entry_ids, taxon_map, taxon2idx, idx_other):
         cols.append(taxon2idx.get(tid, idx_other))
         data.append(1.0) [cite: 22]
     return csr_matrix((data, (rows, cols)), shape=(len(entry_ids), len(taxon2idx)+1), dtype=np.float32)
-
-# =========================
-# ========= MAIN 1 ========
-# =========================
+  
+# main 1
 if __name__ == "__main__":
     print("=== Loading FASTA (train) ===")
     train_seqs = read_train_fasta(os.path.join(CFG.DATA_DIR, CFG.TRAIN_FASTA))
@@ -202,7 +198,7 @@ if __name__ == "__main__":
     X_train = np.hstack([X_seq_train, X_tax_train.toarray()]) [cite: 43]
     X_test = np.hstack([X_seq_test, X_tax_test.toarray()])
 
-    # LƯU DỮ LIỆU ĐÃ XỬ LÝ RA FILE
+    # Lưu dữ liệu đã xử lý và xuất ra file
     print(f"=== Saving processed data to {CFG.OUTPUT_PROCESSED} ===")
     data_to_save = {
         "X_train": X_train,
