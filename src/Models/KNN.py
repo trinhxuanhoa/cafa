@@ -33,7 +33,7 @@ def main():
     X_test = X_test / X_test.norm(dim=1, keepdim=True).clamp(min=1e-8)
     print("Test shape:", X_test.shape)
 
-    # bắt đầu kNN
+    # start kNN
     print("Start kNN predicting...")
     rows = []
     batch_size = 256         
@@ -42,29 +42,28 @@ def main():
 
     with torch.no_grad():
         for i in range(0, X_test.size(0), batch_size):
-            xb = X_test[i:i+batch_size]                    # (B, D)
+            xb = X_test[i:i+batch_size]                   
             batch_ids = test_ids[i:i+batch_size]
 
-            # cosine similarity: (B, N_train)
+            # cosine similarity
             sims = torch.matmul(xb, X_train.T)
 
             # top-k hàng xóm theo similarity
             k_eff = min(k, sims.size(1))
-            vals, idx = torch.topk(sims, k=k_eff, dim=1)   # vals: (B, k), idx: (B, k)
+            vals, idx = torch.topk(sims, k=k_eff, dim=1)  
 
             # bỏ similarity âm
             vals = torch.clamp(vals, min=0.0)
             # chuẩn hóa trọng số
             weight_sum = vals.sum(dim=1, keepdim=True).clamp(min=1e-8)
-            weights = vals / weight_sum                    # (B, k)
+            weights = vals / weight_sum                  
 
-            # lấy nhãn hàng xóm: (B, k, T)
-            neigh_labels = Y_train[idx]                    # (B, k, num_labels)
+            # lấy nhãn hàng xóm
+            neigh_labels = Y_train[idx]                
 
             # weighted average theo trục k
-            # (B, T) = (B,1,k) @ (B,k,T)
-            weights_exp = weights.unsqueeze(1)             # (B, 1, k)
-            scores = torch.bmm(weights_exp, neigh_labels).squeeze(1)  # (B, num_labels)
+            weights_exp = weights.unsqueeze(1)     
+            scores = torch.bmm(weights_exp, neigh_labels).squeeze(1) 
 
             scores_np = scores.cpu().numpy()
 
@@ -79,4 +78,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
