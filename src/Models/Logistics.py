@@ -8,9 +8,6 @@ import torch
 import torch.nn as nn
 from torch.utils.data import TensorDataset, DataLoader, random_split
 
-# =========================
-# ======= CONFIG ==========
-# =========================
 @dataclass
 class Config:
     DATA_DIR: str = "/kaggle/input/hahaha/cafa6/"
@@ -20,17 +17,17 @@ class Config:
     
     INPUT_PROCESSED: str = "processed_data.pkl" # Đọc file từ bước 1
 
-    # Ontology / labels
+    # ontology/labels
     MIN_TERM_FREQ: int = 10
     MAX_TERMS_PER_ASPECT: int = 1000
     ASPECTS: tuple = ("F", "P", "C") [cite: 3]
 
-    # IA weighting
+    # ia weighting
     IA_MIN_W: float = 0.0
     IA_MAX_W: float = 1.0
     IA_ALPHA: float = 1.0
 
-    # Training
+    # train
     RANDOM_STATE: int = 42
     BATCH_SIZE: int = 4096
     EPOCHS_PER_ASPECT: int = 15
@@ -44,9 +41,7 @@ class Config:
 
 CFG = Config()
 
-# =========================
-# == LABELS & IA WEIGHT ===
-# =========================
+# Gán nhãn và tạo ia-weight
 def load_train_terms(path):
     df = pd.read_csv(path, sep="\t", header=0)
     df.columns = ["EntryID", "Term", "Aspect"]
@@ -81,9 +76,7 @@ def build_ia_weights_for_terms(selected_terms, ia_map, cfg):
     ia_norm = (ia_vals - ia_vals.min()) / (ia_vals.max() - ia_vals.min() + 1e-8)
     return cfg.IA_MIN_W + cfg.IA_ALPHA * ia_norm * (cfg.IA_MAX_W - cfg.IA_MIN_W)
 
-# =========================
-# ====== TORCH MODEL ======
-# =========================
+# MLP
 class MultiLabelLogistic(nn.Module): # [cite: 26]
     def __init__(self, input_dim, num_labels):
         super().__init__()
@@ -172,16 +165,14 @@ def write_submission(aspect, preds, terms, test_ids, cfg, out_path):
     if buffer:
         pd.DataFrame(buffer).to_csv(out_path, sep="\t", index=False, mode="a", header=False) # [cite: 39]
 
-# =========================
-# ========= MAIN 2 ========
-# =========================
+# main 2
 if __name__ == "__main__":
     np.random.seed(CFG.RANDOM_STATE)
     torch.manual_seed(CFG.RANDOM_STATE)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("Using device:", device)
 
-    # 1. LOAD PROCESSED DATA
+    # load data
     print(f"=== Loading processed data from {CFG.INPUT_PROCESSED} ===")
     with open(CFG.INPUT_PROCESSED, "rb") as f:
         data = pickle.load(f)
@@ -190,15 +181,15 @@ if __name__ == "__main__":
     train_entry_ids = data["train_entry_ids"]
     test_entry_ids = data["test_entry_ids"]
 
-    # 2. INIT SUBMISSION FILE
+    # tạo file submission 
     if os.path.exists(CFG.OUTPUT_SUBMISSION): os.remove(CFG.OUTPUT_SUBMISSION)
     with open(CFG.OUTPUT_SUBMISSION, "w") as f: f.write("EntryID\tTerm\tScore\n")
 
-    # 3. LOAD METADATA
+    # load metadata
     df_terms = load_train_terms(os.path.join(CFG.DATA_DIR, CFG.TRAIN_TERMS)) [cite: 43]
     ia_map = load_ia_scores(os.path.join(CFG.DATA_DIR, CFG.IA_TSV))
 
-    # 4. LOOP ASPECTS
+    # loop
     for aspect in CFG.ASPECTS: # [cite: 44]
         print(f"\n========== Aspect {aspect} ==========")
         df_a = df_terms[df_terms["Aspect"] == aspect]
@@ -207,18 +198,18 @@ if __name__ == "__main__":
         selected_terms = select_terms_for_aspect(df_a, CFG)
         Y_a = build_label_matrix(train_entry_ids, df_a, selected_terms)
 
-        # Remove columns with no positive samples
+        # bỏ cột âm
         col_pos = Y_a.sum(axis=0) > 0
         if not col_pos.any(): continue # [cite: 45]
         Y_a = Y_a[:, col_pos]
         selected_terms = [t for t, k in zip(selected_terms, col_pos) if k]
 
-        # Train & Predict
+        # train
         ia_weights = build_ia_weights_for_terms(selected_terms, ia_map, CFG)
         model = train_aspect_torch(aspect, X_train_tensor.to(device), Y_a, ia_weights, CFG, device) [cite: 46]
         preds = predict_aspect_torch(model, X_test_tensor.to(device), CFG, device) [cite: 47]
 
-        # Write submission
+        # viết submission
         write_submission(aspect, preds, selected_terms, test_entry_ids, CFG, CFG.OUTPUT_SUBMISSION)
 
     print(f"\n=== Done. File output: {CFG.OUTPUT_SUBMISSION} ===") # [cite: 49]
