@@ -17,14 +17,14 @@ class Config:
     TRAIN_TAXON: str = "train_taxonomy.tsv" [cite: 2]
     TEST_FASTA: str = "testsuperset.fasta"
 
-    # Sequence feature
+    # sequence feature
     AMINO_ACIDS: str = "ACDEFGHIKLMNPQRSTVWY"
     KMER_K: int = 1
     MAX_SEQ_LEN: int = 500
     N_POSITION_BINS: int = 20
     USE_POSITIONAL_1MERS: bool = True
 
-    # Taxon
+    # taxon
     MIN_TAXON_COUNT: int = 10
     
     OUTPUT_PROCESSED: str = "processed_data.pkl" # File trung gian
@@ -89,7 +89,7 @@ def sequence_to_features(seq, cfg: Config, kmer2idx): # [cite: 14]
     aa2idx = {aa: i for i, aa in enumerate(cfg.AMINO_ACIDS)}
     num_kmers = len(kmer2idx)
     
-    # Xử lý sequence feature vectors
+    #xử lý sequence feature vectors
     if cfg.USE_POSITIONAL_1MERS:
         pos_dim = cfg.N_POSITION_BINS * len(cfg.AMINO_ACIDS)
         feat_dim = num_kmers + pos_dim
@@ -99,7 +99,7 @@ def sequence_to_features(seq, cfg: Config, kmer2idx): # [cite: 14]
     if not seq:
         return np.zeros(feat_dim, dtype=np.float32)
 
-    # Downsample sequence
+    # lọc sequence
     L_raw = len(seq)
     stride = math.ceil(L_raw / cfg.MAX_SEQ_LEN) if L_raw > cfg.MAX_SEQ_LEN else 1
     seq_ds = seq[::stride]
@@ -138,7 +138,7 @@ def build_sequence_feature_matrix(entry_ids, seq_dict, cfg, kmer2idx):
         X_list.append(sequence_to_features(seq_dict.get(pid, ""), cfg, kmer2idx))
     return np.stack(X_list, axis=0) [cite: 20]
 
-# TAXON FEATURES
+# phần taxon
 def load_train_taxonomy(path):
     df = pd.read_csv(path, sep="\t", header=None, names=["EntryID", "TaxonID"])
     return dict(zip(df["EntryID"].astype(str), df["TaxonID"].astype(str)))
@@ -198,7 +198,7 @@ if __name__ == "__main__":
     X_train = np.hstack([X_seq_train, X_tax_train.toarray()]) [cite: 43]
     X_test = np.hstack([X_seq_test, X_tax_test.toarray()])
 
-    # Lưu dữ liệu đã xử lý và xuất ra file
+    # xuất file
     print(f"=== Saving processed data to {CFG.OUTPUT_PROCESSED} ===")
     data_to_save = {
         "X_train": X_train,
