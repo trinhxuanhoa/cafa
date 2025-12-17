@@ -4,10 +4,10 @@ from torch.utils.data import TensorDataset, DataLoader
 import pandas as pd
 import numpy as np
 
-# Định nghĩa Model (Nên để ở ngoài cùng, không nằm trong hàm nào để dễ import nếu cần)
+# định nghĩa Model để ở ngoài cùng, không nằm trong hàm nào cho dễ import 
 class MLP(nn.Module):
     def __init__(self, input_dim=1280, hidden1=1024, hidden2=512, output_dim=0, dropout=0.3):
-        # Lưu ý: output_dim mặc định là 0, sẽ được truyền vào khi khởi tạo
+        # output_dim mặc định là 0, truyền vào khi khởi tạo
         super().__init__()
         self.fc1 = nn.Linear(input_dim, hidden1)
         self.bn1 = nn.BatchNorm1d(hidden1)
@@ -28,35 +28,22 @@ class MLP(nn.Module):
         return x
 
 def main():
-    # =============================
-    # Setup Device
-    # =============================
+    #chỉnh device
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print("Device:", device)
 
-    # =============================
-    # 1. Load train dataset
-    # =============================
-    # đường dẫn không đúng đâu.
+    # load dataset
     data = torch.load("train_dataset.pt", weights_only=False) 
     X = data["X"]
     Y = data["Y"]
     term2idx = data["term2idx"]
     idx2term = {v: k for k, v in term2idx.items()}
     num_labels = len(term2idx)
-
-    # Tạo DataLoader
     train_ds = TensorDataset(X, Y)   
     train_dl = DataLoader(train_ds, batch_size=256, shuffle=True)
-
-    # =============================
-    # 2. Initialize Model
-    # =============================
     model = MLP(output_dim=num_labels).to(device)
 
-    # =============================
-    # 3. Training
-    # =============================
+    # train
     opt = torch.optim.Adam(model.parameters(), lr=1e-3)
     loss_fn = nn.BCEWithLogitsLoss()
     epochs = 15
@@ -77,15 +64,11 @@ def main():
 
             total_loss += loss.item()
         print(f"Epoch {epoch+1}/{epochs}, Loss: {total_loss/len(train_dl):.4f}")
-
-    # Save trained model
+        
     torch.save({"model": model.state_dict(), "term2idx": term2idx}, "best_model.pt")
     print("Saved best_model.pt")
 
-    # =============================
-    # 4. Load test embeddings
-    # =============================
-  
+    #load embedding
     emb_raw = torch.load(
         "test_embeddings_t33.pt", 
         map_location=device,
@@ -94,9 +77,7 @@ def main():
     test_ids = emb_raw["ids"]
     test_features = torch.tensor(emb_raw["features"], dtype=torch.float32).to(device)
 
-    # =============================
-    # 5. Batch prediction
-    # =============================
+    # batch prediction
     print("Start predicting...")
     model.eval()
     rows = []
@@ -115,9 +96,7 @@ def main():
                 for idx in hit:
                     rows.append([acc, idx2term[idx], float(p[idx])])
 
-    # =============================
-    # 6. Save submission
-    # =============================
+    # lưu sub
     df = pd.DataFrame(rows, columns=["EntryID", "term", "score"])
     df.to_csv("submission.tsv", sep="\t", index=False)
     print("Saved submission.tsv")
