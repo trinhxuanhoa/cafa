@@ -1,10 +1,9 @@
 import torch
 import pandas as pd
 
-# ==== Load embeddings ==== code chạy trên kaggle
+# load embedding của kaggle
 emb = torch.load("/kaggle/input/version2/cafa_project/data/embeddings/train_embeddings_t33.pt") 
 
-# Convert key: sp|A0A0...|Name → A0A0...
 emb2 = {}
 for full_id, vec in emb.items():
     acc = full_id.split("|")[1]
@@ -12,17 +11,15 @@ for full_id, vec in emb.items():
 
 print("Total embeddings:", len(emb2))
 
-# ==== Load labels ====
 df = pd.read_csv("/kaggle/input/cafa-project/cafa_project/data/raw/train_terms.tsv", sep="\t")
 
-# List of all GO terms
 all_terms = sorted(df["term"].unique())
 term2idx = {t: i for i, t in enumerate(all_terms)}
 num_labels = len(all_terms)
 
 print("Total GO terms:", num_labels)
 
-# Build dataset
+# build dataset
 X = []
 Y = []
 
