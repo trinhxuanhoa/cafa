@@ -9,7 +9,6 @@ FASTA_FILE = "data/raw/train_sequences.fasta"
 SAVE_PATH = "data/embeddings/train_embeddings_t33.pt"
 
 BATCH_SIZE = 16 
-
 MAX_LEN = 1024 
 
 def get_device():
@@ -18,12 +17,9 @@ def get_device():
 def main():
     device = get_device()
     print(f"Đang chạy trên thiết bị: {device}")
-    
-
     print(f"Đang tải model {MODEL_NAME}...")
     tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
     model = AutoModel.from_pretrained(MODEL_NAME)
-       
     if device.type == 'cuda':
         model = model.half()
         print("Đã bật chế độ FP16")
@@ -46,14 +42,13 @@ def main():
         sequences.append(str(record.seq))
     
     print(f"Tổng số protein cần xử lý: {len(sequences)}")
-    
+
     embeddings_dict = {}
 
     with torch.no_grad():
         for i in tqdm(range(0, len(sequences), BATCH_SIZE), desc="Creating Embeddings"):
             batch_seqs = sequences[i : i + BATCH_SIZE]
             batch_ids = ids[i : i + BATCH_SIZE]
-
             inputs = tokenizer(
                 batch_seqs, 
                 return_tensors="pt", 
@@ -61,9 +56,7 @@ def main():
                 truncation=True, 
                 max_length=MAX_LEN
             ).to(device)
-
             outputs = model(**inputs)
-            
             token_embeddings = outputs.last_hidden_state
             attention_mask = inputs['attention_mask']
             
@@ -77,7 +70,6 @@ def main():
                     
             for j, seq_id in enumerate(batch_ids):
                 embeddings_dict[seq_id] = batch_embeddings[j].float().cpu()
-
     print(f" Đang lưu file kết quả vào {SAVE_PATH}...")
     torch.save(embeddings_dict, SAVE_PATH)
     print("Xong")
