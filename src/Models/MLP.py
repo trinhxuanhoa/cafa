@@ -4,7 +4,6 @@ from torch.utils.data import TensorDataset, DataLoader
 import pandas as pd
 import numpy as np
 
-# định nghĩa Model để ở ngoài cùng, không nằm trong hàm nào cho dễ import 
 class MLP(nn.Module):
     def __init__(self, input_dim=1280, hidden1=1024, hidden2=512, output_dim=0, dropout=0.3):
         # output_dim mặc định là 0, truyền vào khi khởi tạo
