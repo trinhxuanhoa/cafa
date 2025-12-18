@@ -26,7 +26,7 @@ def main():
     print("Device:", device)
 
     #train
-    print("\n=== START TRAINING ===")
+    print("\n START TRAINING...")
        
     data = torch.load("train_dataset.pt", weights_only=False)
     X = data["X"]
