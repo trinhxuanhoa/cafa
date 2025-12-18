@@ -26,7 +26,7 @@ def main():
        
     if device.type == 'cuda':
         model = model.half()
-        print("⚡ Đã bật chế độ FP16 (Half Precision) để tăng tốc.")
+        print("Đã bật chế độ FP16")
     
     model = model.to(device)
     model.eval()
@@ -37,7 +37,7 @@ def main():
         model = torch.nn.DataParallel(model)
 
     #đọc dữ liệu
-    print("📖 Đang đọc file FASTA...")
+    print("Đang đọc file FASTA...")
     sequences = []
     ids = []
     # ram yếu thì phải đọc từng dòng
